@@ -14,23 +14,27 @@ let newNoteBtn = document.getElementById("new-noteBtn");
 
 if(newNoteBtn){
   newNoteBtn.addEventListener("click", function(){
-    let lastID = 0
-    $.getJSON(filename, function(result){
-      $.each(result, function(i, field){
-        if(field.id > lastID){
-          lastID = field.id
-        }
-      });
-      lastID++
-      var newNoteTitle = "Note" + lastID;
-      result[newNoteTitle] = {id:lastID, name: "New Note", timestamp: "Now", text: ""};
-      fs.writeFile(filename, JSON.stringify(result), (err) => {
-      if(err)
-        console.log(err)
-      })
-      addEntry("New Note", lastID )
-    });
+    writeNewEntry();
   })
+}
+
+function writeNewEntry(){
+  let lastID = 0
+  $.getJSON(filename, function(result){
+    $.each(result, function(i, field){
+      if(field.id > lastID){
+        lastID = field.id
+      }
+    });
+    lastID++
+    var newNoteTitle = "Note" + lastID;
+    result[newNoteTitle] = {id:lastID, name: "New Note", timestamp: "Now", text: ""};
+    fs.writeFile(filename, JSON.stringify(result), (err) => {
+    if(err)
+      console.log(err)
+    })
+    addEntry("New Note", lastID )
+  });
 }
 
 function addEntry(name, noteID){
@@ -110,26 +114,8 @@ function loadAndDisplayContacts() {
 loadAndDisplayContacts()
 
 ipcRenderer.on('create-note', (event, arg) => {
-  let lastID = 0
-  $.getJSON(filename, function(result){
-    $.each(result, function(i, field){
-      if(field.id > lastID){
-        lastID = field.id
-      }
-    });
-    lastID++
-    var newNoteTitle = "Note" + lastID;
-    result[newNoteTitle] = {id:lastID, name: "New Note", timestamp: "Now", text: ""};
-    fs.writeFile(filename, JSON.stringify(result), (err) => {
-    if(err)
-      console.log(err)
-    })
-    addEntry("New Note", lastID )
-  });
+  writeNewEntry();
 })
-
-function readyFn() {
-}
 
 $(function() {
     console.log( "ready!" );
