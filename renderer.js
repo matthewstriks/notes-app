@@ -33,8 +33,38 @@ function writeNewEntry(){
     if(err)
       console.log(err)
     })
-    addEntry("New Note", lastID )
+    addEntry("New Note", newNoteTitle )
   });
+}
+
+function openBtnFunction(btnID){
+  document.getElementById(btnID).addEventListener("click", function(){
+    console.log('open! ' + btnID);
+    let noteToOpen
+    $.getJSON(filename, function(result){
+      $.each(result, function(i, field){
+        if ('open-' + i == btnID) {
+          noteToOpen = result[i];
+        }
+      });
+      console.log(noteToOpen);
+      ipcRenderer.send('open-note', noteToOpen)      
+    });
+  })
+}
+
+function editBtnFunction(btnID){
+  document.getElementById(btnID).addEventListener("click", function(){
+    console.log('edit! ' + btnID);
+
+  })
+}
+
+function deleteBtnFunction(btnID){
+  document.getElementById(btnID).addEventListener("click", function(){
+    console.log('delete! ' + btnID);
+
+  })
 }
 
 function addEntry(name, noteID){
@@ -51,21 +81,24 @@ function addEntry(name, noteID){
   const new_text = document.createElement('text')
   new_text.innerText = textToAdd
 
+  // open note
   const succBtn = document.createElement('button')
   succBtn.className = 'btn btn-outline-success'
-
+  succBtn.setAttribute("id", "open-"+noteID);
   const succBtnImg = document.createElement('i')
   succBtnImg.className = 'fas fa-search'
 
+  // edit note
   const primBtn = document.createElement('button')
   primBtn.className = 'btn btn-outline-primary'
-
+  primBtn.setAttribute("id", "edit-"+noteID);
   const primBtnImg = document.createElement('i')
   primBtnImg.className = 'fas fa-edit'
 
+  // delete note
   const delBtn = document.createElement('button')
   delBtn.className = 'btn btn-outline-danger'
-
+  delBtn.setAttribute("id", "delete-"+noteID);
   const delBtnImg = document.createElement('i')
   delBtnImg.className = 'fas fa-trash'
 
@@ -90,6 +123,10 @@ function addEntry(name, noteID){
   delBtn.appendChild(delBtnImg)
   new_entry.appendChild(spacerEle4)
   ul.appendChild(new_entry)
+
+  openBtnFunction("open-"+noteID)
+  editBtnFunction("edit-"+noteID)
+  deleteBtnFunction("delete-"+noteID)
 }
 
 function loadAndDisplayContacts() {
@@ -98,6 +135,7 @@ function loadAndDisplayContacts() {
     $.getJSON(filename, function(result){
       $.each(result, function(i, field){
         sno = sno + 1
+        console.log(i);
         addEntry(field.name, i)
       });
     });
