@@ -28,7 +28,8 @@ function writeNewEntry(){
     });
     lastID++
     var newNoteTitle = "Note" + lastID;
-    result[newNoteTitle] = {id:lastID, name: "New Note", timestamp: "Now", text: ""};
+    let today = new Date();
+    result[newNoteTitle] = {id:lastID, name: "New Note", timestamp: today.toLocaleDateString("en-US") + " " + today.getHours() + ":" + today.getMinutes(), text: ""};
     fs.writeFile(filename, JSON.stringify(result), (err) => {
     if(err)
       console.log(err)
@@ -48,22 +49,31 @@ function openBtnFunction(btnID){
         }
       });
       console.log(noteToOpen);
-      ipcRenderer.send('open-note', noteToOpen)      
+      ipcRenderer.send('open-note', noteToOpen)
     });
-  })
-}
-
-function editBtnFunction(btnID){
-  document.getElementById(btnID).addEventListener("click", function(){
-    console.log('edit! ' + btnID);
-
   })
 }
 
 function deleteBtnFunction(btnID){
   document.getElementById(btnID).addEventListener("click", function(){
-    console.log('delete! ' + btnID);
-
+    let confirmBtn = document.createElement('button');
+    confirmBtn.innerText = 'Confirm? This option can not be reversed!';
+    confirmBtn.className = 'btn btn-warning';
+    document.getElementById(document.getElementById(btnID).noteid).appendChild(confirmBtn);
+    confirmBtn.addEventListener('click', function(){
+      $.getJSON(filename, function(result){
+        $.each(result, function(i, field){
+          if(document.getElementById(btnID).noteid == i){
+            delete result[i]
+          }
+        });
+        fs.writeFile(filename, JSON.stringify(result), (err) => {
+        loadAndDisplayContacts()
+        if(err)
+          console.log(err)
+        })
+      });
+    })
   })
 }
 
@@ -75,6 +85,7 @@ function addEntry(name, noteID){
 
   const new_entry = document.createElement('li')
   new_entry.className = 'list-group-item'
+  new_entry.setAttribute("id", noteID);
 
   const textToAdd = name;
 
@@ -88,17 +99,11 @@ function addEntry(name, noteID){
   const succBtnImg = document.createElement('i')
   succBtnImg.className = 'fas fa-search'
 
-  // edit note
-  const primBtn = document.createElement('button')
-  primBtn.className = 'btn btn-outline-primary'
-  primBtn.setAttribute("id", "edit-"+noteID);
-  const primBtnImg = document.createElement('i')
-  primBtnImg.className = 'fas fa-edit'
-
   // delete note
   const delBtn = document.createElement('button')
   delBtn.className = 'btn btn-outline-danger'
   delBtn.setAttribute("id", "delete-"+noteID);
+  delBtn.noteid = noteID;
   const delBtnImg = document.createElement('i')
   delBtnImg.className = 'fas fa-trash'
 
@@ -116,20 +121,17 @@ function addEntry(name, noteID){
   new_entry.appendChild(succBtn)
   succBtn.appendChild(succBtnImg)
   new_entry.appendChild(spacerEle2)
-  new_entry.appendChild(primBtn)
-  primBtn.appendChild(primBtnImg)
-  new_entry.appendChild(spacerEle3)
   new_entry.appendChild(delBtn)
   delBtn.appendChild(delBtnImg)
   new_entry.appendChild(spacerEle4)
   ul.appendChild(new_entry)
 
   openBtnFunction("open-"+noteID)
-  editBtnFunction("edit-"+noteID)
   deleteBtnFunction("delete-"+noteID)
 }
 
 function loadAndDisplayContacts() {
+  document.getElementById("notes-list").innerHTML = "";
    //Check if file exists
   if(fs.existsSync(filename)) {
     $.getJSON(filename, function(result){
@@ -141,7 +143,8 @@ function loadAndDisplayContacts() {
     });
   } else {
     console.log("File Doesn\'t Exist. Creating new file.")
-    fs.writeFile(filename, '{ "Note1": { "id":1, "name": "Welcome to the Notes App!", "timestamp": "", "text": "This is an example note!"} }', (err) => {
+    let today = new Date();
+    fs.writeFile(filename, '{ "Note1": { "id":1, "name": "Welcome to the Notes App!", "timestamp": "' + today.toLocaleDateString("en-US") + ' ' + today.getHours() + ':' + today.getMinutes() + '", "text": "This is an example note!"} }', (err) => {
       loadAndDisplayContacts();
       if(err)
       console.log(err)
@@ -155,7 +158,10 @@ ipcRenderer.on('create-note', (event, arg) => {
   writeNewEntry();
 })
 
+ipcRenderer.on('refresh-notes', (event, arg) => {
+  loadAndDisplayContacts()
+})
+
 $(function() {
-    console.log( "ready!" );
-    ipcRenderer.send('setup-client')
+  ipcRenderer.send('setup-client')
 });

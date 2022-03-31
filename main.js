@@ -8,10 +8,14 @@ const globalShortcut = electron.globalShortcut
 const Menu = electron.Menu
 
 let theClient
+let theClient2
+let mainWindow
+let noteWindow
+let noteToSend
 
 function createWindow () {
   // Create the browser window.
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
     webPreferences: {
@@ -54,9 +58,50 @@ ipcMain.on('setup-client', (event, arg) => {
    theClient = event
 })
 
+ipcMain.on('request-note', (event, arg) => {
+  theClient2 = event
+  event.sender.send('send-note', noteToSend)
+})
+
 ipcMain.on('open-note', (event, arg) => {
-  console.log('Opening note!');
-  console.log(arg);
+  noteToSend = arg
+  openNote()
+})
+
+ipcMain.on('close-note', (event, arg) => {
+  noteWindow.close()
+  theClient.sender.send('refresh-notes')
+  if(arg){
+    noteToSend.text = arg
+    openNote()
+  }
+})
+
+
+function openNote(){
+  noteWindow = new BrowserWindow({parent: mainWindow, modal: true, show: false, webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      nodeIntegration: true,
+      contextIsolation: false
+    }
+  })
+  noteWindow.loadFile('note.html')
+  noteWindow.once('ready-to-show', () => {
+    noteWindow.show()
+  })
+}
+
+ipcMain.on('note-delete', (event, arg) => {
+  console.log('running');
+  const options = {
+    type: 'info',
+    title: 'Information',
+    message: "This is an information dialog. Isn't it nice?",
+    buttons: ['Yes', 'No']
+  }
+  dialog.showMessageBox(options, function (index) {
+    theClient2.sender.send('information-dialog-selection', index)
+  })
 })
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits

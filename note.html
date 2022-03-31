@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'">
+    <link href="./styles.css" rel="stylesheet">
+    <title>Notes Application - open note</title>
+    <link rel = "stylesheet" href = "./bower_components/bootstrap/dist/css/bootstrap.min.css" />
+    <script defer src="./node_modules/@fortawesome/fontawesome-free/js/all.js"></script>
+  </head>
+  <body>
+
+    <br>
+
+    <div class="container">
+      <h1 id="noteTitle">Note Title</h1>
+      <p id="noteDTStamp">Creation date/time</p>
+    </div>
+    <hr>
+    <div class="container">
+      <button type="button" class="btn btn-outline-warning" id="back-Btn">Return to all notes</button>
+    </div>
+    <hr>
+    <div class="container">
+      <div class="card">
+        <div id="noteBody" class="card-body">
+        </div>
+        <div id="noteBodyFooter"class="card-footer">
+          <button type="button" class="btn btn-outline-primary" id="edit-Btn"> <i id="edit-BtnI" class="fas fa-edit"></i> </button>
+          <button type="button" class="btn btn-outline-danger" id="delete-Btn"> <i class="fas fa-trash"></i> </button>
+        </div>
+      </div>
+    </div>
+    <br>
+
+    <!-- You can also require other files to run in this process -->
+    <script src="./note-renderer.js"></script>
+  </body>
+</html>
