@@ -23,14 +23,12 @@ function writeNewEntry(name, text){
   theNote.timestamp = today.toLocaleDateString("en-US") + " " + today.getHours() + ":" + today.getMinutes();
   theNote.text = text;
 
-  if (db.valid('user-notes')) {
-    db.insertTableContent('user-notes', location, theNote, (succ, msg) => {
-      // succ - boolean, tells if the call is successful
-      if(!succ){
-        console.log("Message: " + msg);
-      }
-    })
-  }
+  db.insertTableContent('user-notes', location, theNote, (succ, msg) => {
+    // succ - boolean, tells if the call is successful
+    if(!succ){
+      console.log("Message: " + msg);
+    }
+  })
 }
 
 db.createTable('user-notes', location, (succ, msg) => {
