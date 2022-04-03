@@ -19,38 +19,15 @@ if(newNoteBtn){
 }
 
 function writeNewEntry(){
-  let lastID = 0
-  $.getJSON(filename, function(result){
-    $.each(result, function(i, field){
-      if(field.id > lastID){
-        lastID = field.id
-      }
-    });
-    lastID++
-    var newNoteTitle = "Note" + lastID;
-    let today = new Date();
-    result[newNoteTitle] = {id:lastID, name: "New Note", timestamp: today.toLocaleDateString("en-US") + " " + today.getHours() + ":" + today.getMinutes(), text: ""};
-    fs.writeFile(filename, JSON.stringify(result), (err) => {
-    if(err)
-      console.log(err)
-    })
-    addEntry("New Note", newNoteTitle )
-  });
+  ipcRenderer.send('writeNewEntry')
+  loadAndDisplayContacts();
 }
 
 function openBtnFunction(btnID){
   document.getElementById(btnID).addEventListener("click", function(){
-    console.log('open! ' + btnID);
-    let noteToOpen
-    $.getJSON(filename, function(result){
-      $.each(result, function(i, field){
-        if ('open-' + i == btnID) {
-          noteToOpen = result[i];
-        }
-      });
-      console.log(noteToOpen);
-      ipcRenderer.send('open-note', noteToOpen)
-    });
+    var str = btnID;
+    str = str.replace("open-", "");
+    ipcRenderer.send('open-note', str)
   })
 }
 
@@ -60,19 +37,10 @@ function deleteBtnFunction(btnID){
     confirmBtn.innerText = 'Confirm? This option can not be reversed!';
     confirmBtn.className = 'btn btn-warning';
     document.getElementById(document.getElementById(btnID).noteid).appendChild(confirmBtn);
+    document.getElementById(btnID).disabled = true
     confirmBtn.addEventListener('click', function(){
-      $.getJSON(filename, function(result){
-        $.each(result, function(i, field){
-          if(document.getElementById(btnID).noteid == i){
-            delete result[i]
-          }
-        });
-        fs.writeFile(filename, JSON.stringify(result), (err) => {
-        loadAndDisplayContacts()
-        if(err)
-          console.log(err)
-        })
-      });
+      ipcRenderer.send("delete-noteID", document.getElementById(btnID).noteid)
+      loadAndDisplayContacts()
     })
   })
 }
@@ -131,28 +99,10 @@ function addEntry(name, noteID){
 }
 
 function loadAndDisplayContacts() {
-  document.getElementById("notes-list").innerHTML = "";
-   //Check if file exists
-  if(fs.existsSync(filename)) {
-    $.getJSON(filename, function(result){
-      $.each(result, function(i, field){
-        sno = sno + 1
-        console.log(i);
-        addEntry(field.name, i)
-      });
-    });
-  } else {
-    console.log("File Doesn\'t Exist. Creating new file.")
-    let today = new Date();
-    fs.writeFile(filename, '{ "Note1": { "id":1, "name": "Welcome to the Notes App!", "timestamp": "' + today.toLocaleDateString("en-US") + ' ' + today.getHours() + ':' + today.getMinutes() + '", "text": "This is an example note!"} }', (err) => {
-      loadAndDisplayContacts();
-      if(err)
-      console.log(err)
-    })
-  }
+  var ul = document.getElementById("notes-list");
+  ul.innerHTML = '';
+  ipcRenderer.send('setup-client')
 }
-
-loadAndDisplayContacts()
 
 ipcRenderer.on('create-note', (event, arg) => {
   writeNewEntry();
@@ -160,6 +110,16 @@ ipcRenderer.on('create-note', (event, arg) => {
 
 ipcRenderer.on('refresh-notes', (event, arg) => {
   loadAndDisplayContacts()
+})
+
+ipcRenderer.on('getAllNotes', (event, arg) => {
+  console.log(arg);
+
+  $.each(arg, function(i, field){
+    sno = sno + 1
+    addEntry(field.name, i);
+  })
+
 })
 
 $(function() {

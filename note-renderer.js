@@ -19,8 +19,15 @@ if(backBtn){
 
 if(editBtn){
   editBtn.addEventListener("click", function(){
+    let noteTitle = document.getElementById('noteTitle');
     let noteBody = document.getElementById('noteBody');
     let noteBodyFooter = document.getElementById('noteBodyFooter');
+
+    let noteTitleEdit = document.createElement('input')
+    noteTitleEdit.className = 'form-control';
+    noteTitleEdit.value = noteTitle.innerText
+
+    let breakBR = document.createElement('br')
 
     let noteEdit = document.createElement('textarea');
     noteEdit.className = 'form-control';
@@ -35,32 +42,18 @@ if(editBtn){
     noteEditSaveI.className = 'fas fa-save';
 
     noteBody.innerText = ""
+    noteBody.appendChild(noteTitleEdit);
+    noteBody.appendChild(breakBR);
     noteBody.appendChild(noteEdit);
     noteEditSave.appendChild(noteEditSaveI);
     noteBodyFooter.prepend(noteEditSave);
 
     editBtn.disabled = true;
 
-    noteEdit.focus();
+    noteTitleEdit.focus();
 
     noteEditSave.addEventListener("click", function(){
-      // write the changes
-      $.getJSON(filename, function(result){
-        $.each(result, function(i, field){
-          if(theNoteArgs.id == field.id){
-            result[i].text = noteEdit.value
-          }
-        });
-        fs.writeFile(filename, JSON.stringify(result), (err) => {
-        if(err)
-          console.log(err)
-        })
-      });
-      ipcRenderer.send('close-note', noteEdit.value)      
-//      noteBody.innerText = noteEdit.value
-//      noteEditSave.remove()
-//      noteEdit.remove()
-//      editBtn.disabled = false;
+      ipcRenderer.send('close-note', [theNoteArgs.id, noteEdit.value, noteTitleEdit.value])
     })
   })
 }
@@ -71,20 +64,10 @@ if(deleteBtn){
     confirmBtn.innerText = 'Confirm? This option can not be reversed!';
     confirmBtn.className = 'btn btn-warning';
     document.getElementById('noteBodyFooter').appendChild(confirmBtn);
-
+    deleteBtn.disabled = true
     confirmBtn.addEventListener('click', function(){
-      $.getJSON(filename, function(result){
-        $.each(result, function(i, field){
-          if(theNoteArgs.id == field.id){
-            delete result[i]
-          }
-        });
-        fs.writeFile(filename, JSON.stringify(result), (err) => {
-        if(err)
-          console.log(err)
-        })
-        ipcRenderer.send('close-note')
-      });
+      ipcRenderer.send('delete-note', theNoteArgs.id)
+      ipcRenderer.send('close-note')
     })
   })
 }

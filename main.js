@@ -6,12 +6,39 @@ const {ipcMain} = require('electron')
 const dialog = electron.dialog
 const globalShortcut = electron.globalShortcut
 const Menu = electron.Menu
+const db = require('electron-db');
+const location = path.join(__dirname, 'data')
 
 let theClient
 let theClient2
 let mainWindow
 let noteWindow
 let noteToSend
+
+function writeNewEntry(name, text){
+  let today = new Date();
+  let theNote = new Object();
+  //{"Note1":{"id":1,"name":"Welcome to the Notes App!","timestamp":"3/30/2022 20:20","text":"This is an example note!\n\nThanks for welcoming me!"}}
+  theNote.name = name
+  theNote.timestamp = today.toLocaleDateString("en-US") + " " + today.getHours() + ":" + today.getMinutes();
+  theNote.text = text;
+
+  if (db.valid('user-notes')) {
+    db.insertTableContent('user-notes', location, theNote, (succ, msg) => {
+      // succ - boolean, tells if the call is successful
+      if(!succ){
+        console.log("Message: " + msg);
+      }
+    })
+  }
+}
+
+db.createTable('user-notes', location, (succ, msg) => {
+  // succ - boolean, tells if the call is successful
+  if(succ){
+    writeNewEntry("Welcome to the Notes App!", "This is an example note!");
+  }
+})
 
 function createWindow () {
   // Create the browser window.
@@ -54,8 +81,20 @@ app.whenReady().then(() => {
 })
 
 ipcMain.on('setup-client', (event, arg) => {
-   // Event emitter for sending asynchronous messages
-   theClient = event
+ // Event emitter for sending asynchronous messages
+ theClient = event
+
+ db.getAll('user-notes', location, (succ, data) => {
+   // succ - boolean, tells if the call is successful
+   // data - array of objects that represents the rows.
+   if(succ){
+     event.sender.send('getAllNotes', data)
+   }
+ })
+})
+
+ipcMain.on('writeNewEntry', (event, arg) => {
+  writeNewEntry('New Note', '');
 })
 
 ipcMain.on('request-note', (event, arg) => {
@@ -64,19 +103,52 @@ ipcMain.on('request-note', (event, arg) => {
 })
 
 ipcMain.on('open-note', (event, arg) => {
-  noteToSend = arg
-  openNote()
+  db.getAll('user-notes', location, (succ, data) => {
+    if(succ){
+      noteToSend = data[arg];
+      openNote();
+    }
+  })
+})
+
+ipcMain.on('delete-note', (event, arg) => {
+  db.deleteRow('user-notes', location, {'id': arg}, (succ, msg) => {
+    console.log(msg);
+  });
+})
+
+ipcMain.on('delete-noteID', (event, arg) => {
+  db.getAll('user-notes', location, (succ, data) => {
+    if(succ){
+      console.log(data[arg]);
+      db.deleteRow('user-notes', location, {'id': data[arg].id}, (succ, msg) => {
+      });
+    }
+  })
 })
 
 ipcMain.on('close-note', (event, arg) => {
   noteWindow.close()
   theClient.sender.send('refresh-notes')
   if(arg){
-    noteToSend.text = arg
+    console.log("Hello " + arg[0]);
+    let where = {
+      "id": arg[0]
+    };
+    let set = {
+      "text": arg[1],
+      "name": arg[2]
+    }
+    db.updateRow('user-notes', location, where, set, (succ, msg) => {
+      // succ - boolean, tells if the call is successful
+      console.log("Success: " + succ);
+      console.log("Message: " + msg);
+    });
+    noteToSend.text = arg[1]
+    noteToSend.name = arg[2]
     openNote()
   }
 })
-
 
 function openNote(){
   noteWindow = new BrowserWindow({parent: mainWindow, modal: true, show: false, webPreferences: {
