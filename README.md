@@ -11,4 +11,4 @@ cd notes-app
 npm install && npm start
 ```
 
-Created by [Matthew Striks](https://www.matthewstriks.com)
+Created by [Matthew Striks](https://matthewstriks.com/)
